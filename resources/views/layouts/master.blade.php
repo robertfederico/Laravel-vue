@@ -5,13 +5,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-  <title>AdminLTE 3 | Starter</title>
+    <title>{{ config('app.name', 'Laravel') }}</title>
 
-  <link rel="stylesheet" href="{{asset('css/app.css')}}"">
+   <link rel="stylesheet" href="{{asset('css/app.css')}}"">
+
 </head>
 <body class="hold-transition sidebar-mini">
-    <div class="wrapper">
+    <div class="wrapper" id="app">
         <nav class="main-header navbar navbar-expand navbar-white navbar-light">
             <ul class="navbar-nav">
                 <li class="nav-item">
@@ -49,27 +52,27 @@
             <nav class="mt-2">
                 <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-th"></i>
+                        <router-link to="/dashboard" class="nav-link">
+                            <i class="nav-icon fas fa-th cyan"></i>
                             <p>Dashboard </p>
-                        </a>
+                        </router-link>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-user"></i>
+                        <router-link  to="/profile" class="nav-link">
+                            <i class="nav-icon fas fa-user cyan"></i>
                             <p>Profile </p>
-                        </a>
+                        </router-link>
                     </li>
                     <li class="nav-item has-treeview">
-                        <a href="#" class="nav-link active">
-                            <i class="nav-icon fas fa-cogs"></i>
+                        <a href="#" class="nav-link">
+                            <i class="nav-icon fas fa-cogs cyan"></i>
                             <p>Management<i class="right fas fa-angle-left"></i></p>
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
-                                <a href="#" class="nav-link active">
-                                    <i class="far fa-circle nav-icon"></i><p>Active Page</p>
-                                </a>
+                                <router-link to="/users" class="nav-link">
+                                    <i class="far fa-circle nav-icon"></i><p>Users</p>
+                                </router-link>
                             </li>
                         <li class="nav-item">
                             <a href="#" class="nav-link">
@@ -79,9 +82,15 @@
                         </ul>
                     </li>
                     <li class="nav-item">
-                        <a href="#" class="nav-link">
-                            <i class="nav-icon fas fa-power-off"></i><p>Logout </p>
+                        <a class="nav-link" href="{{ route('logout') }}"
+                            onclick="event.preventDefault();
+                                        document.getElementById('logout-form').submit();">
+                            <i class="nav-icon fas fa-power-off red"></i>
+                            <p>{{ __('Logout') }}</p>
                         </a>
+                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                            @csrf
+                        </form>
                     </li>
                 </ul>
             </nav>
@@ -91,18 +100,19 @@
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
         <div class="content">
-        <div class="container-fluid">
-        </div>
+            <div class="container-fluid">
+                <router-view></router-view>
+            </div>
         </div>
     </div>
-    <footer class="main-footer">
-        <!-- To the right -->
-        <div class="float-right d-none d-sm-inline">
-        Anything you want
-        </div>
-        <!-- Default to the left -->
-        <strong>Copyright &copy; 2014-2019 <a href="#">AdminLTE.io</a>.</strong> All rights reserved.
-    </footer>
+        <footer class="main-footer">
+            <!-- To the right -->
+            <div class="float-right d-none d-sm-inline">
+            Anything you want
+            </div>
+            <!-- Default to the left -->
+            <strong>Copyright &copy; 2014-2019 <a href="#">AdminLTE.io</a>.</strong> All rights reserved.
+        </footer>
     </div>
     
     <script src="{{asset('js/app.js')}}"></script>
