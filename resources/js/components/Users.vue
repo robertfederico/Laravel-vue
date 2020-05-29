@@ -7,12 +7,7 @@
             <h3 class="card-title">Users List</h3>
 
             <div class="card-tools">
-              <button
-                type="button"
-                class="btn btn-success"
-                data-toggle="modal"
-                data-target="#userModal"
-              >
+              <button type="button" class="btn btn-success" @click="newModal">
                 <i class="fas fa-user-plus fa-fw"></i> Add New
                 User
               </button>
@@ -31,19 +26,24 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="user in users" :key="user.id">
-                  <td>{{ user.id }}</td>
+                <tr v-for="(user,counter) in users" :key="user.id">
+                  <td>{{ ++counter }}</td>
                   <td>{{ user.name }}</td>
                   <td>{{ user.email }}</td>
                   <td>
-                    <span class="badge badge-success">{{ user.type }}</span>
+                    <div v-if="user.type =='admin'">
+                      <span class="badge badge-danger">{{ user.type | capitalize }}</span>
+                    </div>
+                    <div v-else>
+                      <span class="badge badge-success">{{ user.type | capitalize }}</span>
+                    </div>
                   </td>
-                  <td>{{ user.created_at }}</td>
+                  <td>{{ user.created_at | myDate }}</td>
                   <td>
-                    <a href="#" class="btn btn-primary btn-sm">
+                    <a href="#" @click="editModal(user)" class="btn btn-primary btn-sm">
                       <i class="fas fa-edit"></i>
                     </a>
-                    <a href="#" class="btn btn-danger btn-sm">
+                    <a href="#" @click="deleteUser(user.id)" class="btn btn-danger btn-sm">
                       <i class="fas fa-trash"></i>
                     </a>
                   </td>
@@ -59,12 +59,15 @@
       <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
           <div class="modal-header">
-            <h5 class="modal-title" id="exampleModalLabel">Add User</h5>
+            <h5 class="modal-title" id="exampleModalLabel">{{editMode ? 'Update User' : 'Add User'}}</h5>
             <button type="button" class="close" data-dismiss="modal" aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
           </div>
-          <form @submit.prevent="createUser" @keydown="form.onKeydown($event)">
+          <form
+            @submit.prevent="editMode ? updateUser() : createUser()"
+            @keydown="form.onKeydown($event)"
+          >
             <div class="modal-body">
               <alert-error :form="form"></alert-error>
               <div class="row">
@@ -135,7 +138,13 @@
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-              <button type="submit" :disabled="form.busy" class="btn btn-primary">Create User</button>
+              <button v-show="editMode" type="submit" class="btn btn-success">Update User</button>
+              <button
+                v-show="!editMode"
+                type="submit"
+                :disabled="form.busy"
+                class="btn btn-primary"
+              >Create User</button>
             </div>
           </form>
         </div>
@@ -148,8 +157,11 @@
 export default {
   data() {
     return {
+      counter: 0,
+      editMode: true,
       users: {},
       form: new Form({
+        id: "",
         name: "",
         email: "",
         password: "",
@@ -160,15 +172,106 @@ export default {
     };
   },
   methods: {
+    newModal() {
+      this.form.reset();
+      this.form.clear();
+      this.editMode = false;
+      $("#userModal").modal("show");
+    },
+    editModal(user) {
+      this.form.reset();
+      this.form.clear();
+      this.editMode = true;
+      $("#userModal").modal("show");
+      this.form.fill(user);
+    },
     loadUsers() {
       axios.get("api/user").then(({ data }) => (this.users = data.data));
     },
     createUser() {
-      this.form.get("api/user");
+      this.$Progress.start();
+      this.form
+        .post("api/user")
+        .then(response => {
+          // Fire this event after user is created
+          Fire.$emit("actionCompleted");
+          $("#userModal").modal("hide");
+
+          Toast.fire({
+            icon: "success",
+            title: "User created successfully"
+          });
+
+          this.$Progress.finish();
+        })
+        .catch(response => {
+          this.$Progress.fail();
+          Toast.fire({
+            icon: "warning",
+            title: "There were some problems with your input"
+          });
+        });
+    },
+    deleteUser(id) {
+      Swal.fire({
+        title: "Are you sure?",
+        text: "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, delete it!"
+      }).then(result => {
+        if (result.value) {
+          this.form
+            .delete("api/user/" + id)
+            .then(() => {
+              Swal.fire({
+                title: "Deleted",
+                text: "User is deleted Successfully",
+                icon: "success",
+                onClose: () => {
+                  Fire.$emit("actionCompleted");
+                }
+              });
+            })
+            .catch(() => {
+              Toast.fire({
+                icon: "error",
+                title: "Smething went wrong."
+              });
+            });
+        }
+      });
+    },
+    updateUser(id) {
+      this.$Progress.start();
+      this.form
+        .put("api/user/" + this.form.id)
+        .then(() => {
+          Fire.$emit("actionCompleted");
+          $("#userModal").modal("hide");
+          Toast.fire({
+            icon: "success",
+            title: "User information has been updated successfully!"
+          });
+          this.$Progress.finish();
+        })
+        .catch(() => {
+          this.$Progress.fail();
+          Toast.fire({
+            icon: "error",
+            title: "There were some problems with your input"
+          });
+        });
     }
   },
   created() {
     this.loadUsers();
+    // listen to the event that was triggred after creater user
+    Fire.$on("actionCompleted", () => {
+      this.loadUsers();
+    });
   }
 };
 </script>
